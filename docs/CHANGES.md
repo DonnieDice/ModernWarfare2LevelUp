@@ -1,3 +1,8 @@
+v2.0.1
+
+- Fixed README and CurseForge description formatting to match the fuller RGX addon presentation
+- Corrected the branded `Up!` title styling in MW2 docs
+
 v2.0.0
 
 - Renamed addon files and package metadata from `MW2LU` to `ModernWarfare2LevelUp`

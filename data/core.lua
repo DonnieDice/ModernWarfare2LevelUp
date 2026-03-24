@@ -1,6 +1,6 @@
 MW2LU = MW2LU or {}
 
-local ADDON_VERSION = "2.0.0"
+local ADDON_VERSION = "2.0.1"
 local ADDON_NAME = "ModernWarfare2LevelUp"
 local TITLE = "[|cff4F4F4FM|r|cffffffffodern Warfare 2 |r|cff4F4F4FL|r|cffffffffevel-|r|cff4F4F4FU|r|cff4F4F4F!|r]"
 local SOUND_PATHS = {
