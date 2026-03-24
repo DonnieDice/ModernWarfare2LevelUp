@@ -1,0 +1,15 @@
+## Interface: 20504
+## Version: 2.0.0
+## Title: |cff4F4F4FM|r|cffffffffodern Warfare 2 |r|cff4F4F4FL|r|cffffffffevel-|r|cff4F4F4FU|r|cff4F4F4F!|r
+## Notes: Play a Modern Warfare 2-inspired level-up sound!  |n|r  |cff4F4F4F/mw2lu -|r Open help  |n|r   |cff4F4F4FBy DonnieDice|r
+## Author: DonnieDice
+## SavedVariables: MW2LUSettings
+
+## X-Category: UI Media, Questing & Leveling, Audio & Video, Miscellaneous
+## X-Website: https://github.com/donniedice/ModernWarfare2LevelUp
+## X-Curse-Project-ID: 420123
+## X-Wago-ID: n6VPemGd
+## X-WoWI-ID: 26258
+
+data\locales.lua
+data\core.lua
