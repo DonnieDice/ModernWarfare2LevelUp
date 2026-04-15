@@ -1,5 +1,5 @@
 ## Interface: 11508
-## Version: 2.0.1
+## Version: 2.0.2
 ## Title: |cff4F4F4FM|r|cffffffffodern Warfare 2 |r|cff4F4F4FL|r|cffffffffevel-|r|cff4F4F4FU|r|cff4F4F4F!|r
 ## Notes: Play a Modern Warfare 2-inspired level-up sound!  |n|r  |cff4F4F4F/mw2lu -|r Open help  |n|r   |cff4F4F4FBy DonnieDice|r
 ## Author: DonnieDice
