@@ -3,9 +3,28 @@ name: Package and Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta*'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha*'
     branches:
       - alpha
+      - dev
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release channel to publish/notify
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - beta
+          - alpha
+      tag_name:
+        description: Tag name to use in release links and notifications
+        required: false
+        default: v2.0.4
+        type: string
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
@@ -37,23 +56,30 @@ jobs:
       - name: 🧭 Determine Release Type
         id: release_type
         run: |
-          case "${{ github.ref }}" in
-            refs/tags/*)
-              if [[ "${{ github.ref }}" == *"beta"* ]]; then
-                echo "type=beta" >> $GITHUB_OUTPUT
-              elif [[ "${{ github.ref }}" == *"alpha"* ]]; then
-                echo "type=alpha" >> $GITHUB_OUTPUT
-              else
-                echo "type=release" >> $GITHUB_OUTPUT
-              fi
-              ;;
-            refs/heads/alpha)
-              echo "type=alpha-branch" >> $GITHUB_OUTPUT
-              ;;
-            *)
-              echo "type=unknown" >> $GITHUB_OUTPUT
-              ;;
-          esac
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "type=${{ inputs.release_type }}" >> $GITHUB_OUTPUT
+          else
+            case "${{ github.ref }}" in
+              refs/tags/*)
+                if [[ "${{ github.ref }}" == *"beta"* ]]; then
+                  echo "type=beta" >> $GITHUB_OUTPUT
+                elif [[ "${{ github.ref }}" == *"alpha"* ]]; then
+                  echo "type=alpha" >> $GITHUB_OUTPUT
+                else
+                  echo "type=release" >> $GITHUB_OUTPUT
+                fi
+                ;;
+              refs/heads/dev)
+                echo "type=dev" >> $GITHUB_OUTPUT
+                ;;
+              refs/heads/alpha)
+                echo "type=alpha-branch" >> $GITHUB_OUTPUT
+                ;;
+              *)
+                echo "type=unknown" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          fi
 
       - name: 📦 Extract Version from TOC
         id: version
@@ -75,29 +101,30 @@ jobs:
           echo "  X-Wago-ID: ${wago_id:-missing}"
           echo "  X-WoWI-ID: ${wowi_id:-missing}"
 
+          if [[ -z "$curse_id" ]]; then
+            echo "::warning::X-Curse-Project-ID is missing. CurseForge upload will be skipped."
+          fi
+
           if [[ -z "$wago_id" ]]; then
-            echo "::warning::X-Wago-ID is missing in ModernWarfare2LevelUp.toc. Wago upload will be skipped."
+            echo "::warning::X-Wago-ID is missing. Wago upload will be skipped."
           fi
 
           if [[ -z "$wowi_id" ]]; then
-            echo "::warning::X-WoWI-ID is missing in ModernWarfare2LevelUp.toc. WoWInterface upload will be skipped."
+            echo "::warning::X-WoWI-ID is missing. WoWInterface upload will be skipped."
           fi
 
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             tag="${GITHUB_REF#refs/tags/}"
+            norm_tag="${tag#v}"
+            norm_ver="${version#v}"
 
-            if [[ "$tag" != "$version" ]]; then
+            if [[ "$norm_tag" != "$norm_ver" ]]; then
               echo "::error::Tag '$tag' does not match ModernWarfare2LevelUp.toc version '$version'."
               exit 1
             fi
 
-            if [[ -z "$curse_id" ]]; then
-              echo "::error::Missing X-Curse-Project-ID in ModernWarfare2LevelUp.toc. CurseForge upload cannot run."
-              exit 1
-            fi
-
-            if [[ -z "${CF_API_KEY:-}" ]]; then
-              echo "::error::CF_API_KEY secret is missing. CurseForge upload cannot run."
+            if [[ -n "$curse_id" && -z "${CF_API_KEY:-}" ]]; then
+              echo "::error::CF_API_KEY secret is missing but X-Curse-Project-ID is set. CurseForge upload cannot run."
               exit 1
             fi
           fi
@@ -109,7 +136,9 @@ jobs:
           version="${{ steps.version.outputs.version }}"
           short_version="${version#v}"
 
-          if [[ -f "docs/CHANGES.md" ]]; then
+          if [[ -f "docs/changelogs/${short_version}.md" ]]; then
+            changelog_content="$(cat "docs/changelogs/${short_version}.md")"
+          elif [[ -f "docs/CHANGES.md" ]]; then
             changelog_content="$(awk '
               /^## / {
                 if (started) { exit }
@@ -121,15 +150,13 @@ jobs:
             changelog_content="No changelog available."
           fi
 
-          # Full body for GitHub Release
           {
             echo "body<<EOF"
             echo "$changelog_content"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-          # Discord field values are capped at 1024 chars
-          bullet_lines="$(echo "$changelog_content" | grep -E '^[-*]|^\\*\\*' | head -20 | sed 's/^\*\*[^*]*\*\*[[:space:]]*//' )"
+          bullet_lines="$(echo "$changelog_content" | grep -E '^[-*]|^\*\*' | head -20 | sed 's/^\*\*[^*]*\*\*[[:space:]]*//' )"
           if ((${#bullet_lines} > 980)); then
             bullet_lines="${bullet_lines:0:977}..."
           fi
@@ -164,11 +191,11 @@ jobs:
           case "$release_type" in
             "release")
               title="MW2LU | Modern Warfare 2 Level-Up! ${version}"
-              color=16768000
+              color=6908265
               footer="RGX Mods • Stable Release"
-              description="A new stable release is live."
-              release_url="https://github.com/donniedice/ModernWarfare2LevelUp/releases/tag/${version}"
-              downloads="[CurseForge](https://www.curseforge.com/wow/addons/modernwarfare2levelup) • [Wago](https://addons.wago.io/addons/mw2lu) • [WoWInterface](https://www.wowinterface.com/downloads/info26258) • [GitHub](${release_url})"
+              description="A new stable release is live. Level up in style!"
+              release_url="https://github.com/DonnieDice/ModernWarfare2LevelUp/releases/tag/v${version#v}"
+              downloads="[CurseForge](https://www.curseforge.com/wow/addons/modern-warfare-2-level-up) • [Wago](https://addons.wago.io/addons/modern-warfare-2-level-up) • [WoWInterface](https://www.wowinterface.com/downloads/info26258) • [GitHub](${release_url})"
               channel="Release"
               ;;
             "beta")
@@ -176,8 +203,8 @@ jobs:
               color=16744448
               footer="RGX Mods • Beta Build"
               description="Beta build available for testing."
-              release_url="https://github.com/donniedice/ModernWarfare2LevelUp/releases/tag/${version}"
-              downloads="[CurseForge](https://www.curseforge.com/wow/addons/modernwarfare2levelup) • [GitHub](${release_url})"
+              release_url="https://github.com/DonnieDice/ModernWarfare2LevelUp/releases/tag/v${version#v}"
+              downloads="[CurseForge](https://www.curseforge.com/wow/addons/modern-warfare-2-level-up) • [GitHub](${release_url})"
               channel="Beta"
               ;;
             "alpha"|"alpha-branch")
@@ -185,16 +212,25 @@ jobs:
               color=9109504
               footer="RGX Mods • Alpha Build"
               description="Alpha build available for testing."
-              release_url="https://github.com/donniedice/ModernWarfare2LevelUp/tree/alpha"
+              release_url="https://github.com/DonnieDice/ModernWarfare2LevelUp/tree/alpha"
               downloads="[GitHub Alpha Branch](${release_url})"
               channel="Alpha"
+              ;;
+            "dev")
+              title="MW2LU | Modern Warfare 2 Level-Up! ${version} (Dev)"
+              color=3447003
+              footer="RGX Mods • Dev Build"
+              description="Development build from the dev branch."
+              release_url="https://github.com/DonnieDice/ModernWarfare2LevelUp/tree/dev"
+              downloads="[GitHub Dev Branch](${release_url})"
+              channel="Dev"
               ;;
             *)
               title="MW2LU | Modern Warfare 2 Level-Up! ${version}"
               color=10000000
               footer="RGX Mods"
               description="Build completed."
-              release_url="https://github.com/donniedice/ModernWarfare2LevelUp/releases"
+              release_url="https://github.com/DonnieDice/ModernWarfare2LevelUp/releases"
               downloads="[GitHub](${release_url})"
               channel="Unknown"
               ;;
@@ -202,18 +238,20 @@ jobs:
 
           jq -n \
             --arg username "MW2LU Releases" \
+            --arg avatar_url "https://raw.githubusercontent.com/DonnieDice/ModernWarfare2LevelUp/main/media/logo.png" \
             --arg title "$title" \
             --arg url "$release_url" \
             --arg description "$description" \
             --argjson color "$color" \
             --arg footer "$footer" \
-            --arg icon_url "https://raw.githubusercontent.com/donniedice/SimpleQuestPlates/main/images/kiwi.gif" \
+            --arg icon_url "https://raw.githubusercontent.com/donniedice/SimpleQuestPlates/main/media/kiwi.gif" \
             --arg timestamp "${RELEASE_TIMESTAMP}" \
             --arg summary "$summary" \
             --arg downloads "$downloads" \
             --arg channel "$channel" \
             '{
               username: $username,
+              avatar_url: $avatar_url,
               embeds: [{
                 title: $title,
                 url: $url,
@@ -242,18 +280,19 @@ jobs:
             --arg timestamp "${{ steps.version.outputs.timestamp }}" \
             '{
               username: "MW2LU Build Failed",
+              avatar_url: "https://raw.githubusercontent.com/DonnieDice/ModernWarfare2LevelUp/main/media/logo.png",
               embeds: [{
                 title: "❌ MW2LU Build Failed",
                 description: "The release workflow encountered an error",
-                url: "https://github.com/donniedice/ModernWarfare2LevelUp/actions/runs/\($run_id)",
+                url: "https://github.com/DonnieDice/ModernWarfare2LevelUp/actions/runs/\($run_id)",
                 color: 15158332,
                 fields: [
                   { "name": "Version", "value": $version, "inline": true },
-                  { "name": "Workflow", "value": "[View Logs](https://github.com/donniedice/ModernWarfare2LevelUp/actions/runs/\($run_id))", "inline": true }
+                  { "name": "Workflow", "value": "[View Logs](https://github.com/DonnieDice/ModernWarfare2LevelUp/actions/runs/\($run_id))", "inline": true }
                 ],
                 footer: {
                   "text": "RGX Mods - Build System",
-                  "icon_url": "https://raw.githubusercontent.com/donniedice/SimpleQuestPlates/main/images/kiwi.gif"
+                  "icon_url": "https://raw.githubusercontent.com/donniedice/SimpleQuestPlates/main/media/kiwi.gif"
                 },
                 timestamp: $timestamp
               }]
