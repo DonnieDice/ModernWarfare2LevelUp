@@ -9,11 +9,10 @@ local RGX = assert(_G.RGXFramework, "MW2LU: RGX-Framework not loaded")
 
 MW2LU = MW2LU or {}
 
-local ADDON_VERSION = "3.0.0"
+local ADDON_VERSION = "3.0.1"
 local ADDON_NAME = "ModernWarfare2LevelUp"
-local ICON_PATH = "|Tinterface/addons/ModernWarfare2LevelUp/media/icon:16:16|t"
-local PREFIX = ICON_PATH .. " |cff4F4F4FMW2LU:|r"
-local TITLE = "[|cff4F4F4FM|r|cffffffffodern Warfare 2|r |cff4F4F4FL|r|cffffffffevel-|r|cff4F4F4FU|r|cff4F4F4F!|r]"
+local PREFIX = "|Tinterface/addons/ModernWarfare2LevelUp/media/icon:16:16|t - |cffffffff[|r|cff4F4F4FMW2LU|r|cffffffff]|r "
+local TITLE = "|Tinterface/addons/ModernWarfare2LevelUp/media/icon:18:18|t [|cff4F4F4FM|r|cffffffffodern Warfare 2|r |cff4F4F4FL|r|cffffffffevel-|r|cff4F4F4FU|r|cff4F4F4F!|r]"
 
 MW2LU.version = ADDON_VERSION
 MW2LU.addonName = ADDON_NAME
