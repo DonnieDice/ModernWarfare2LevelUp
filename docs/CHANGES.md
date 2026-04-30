@@ -4,6 +4,7 @@
 - Normalized in-game title, notes, and icon metadata for consistent AddOns list presentation across supported WoW clients.
 - Aligned README and description highlight colors with the Modern Warfare 2 brand palette.
 - Updated description page shared RGX Kiwi asset paths and command-section wording for docs congruency.
+- Corrected the CurseForge project ID metadata used by automated release uploads.
 - Synced addon version metadata for this release.
 
 # v2.0.6 - 2026-04-23

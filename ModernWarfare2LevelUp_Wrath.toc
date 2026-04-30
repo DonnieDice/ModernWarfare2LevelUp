@@ -8,7 +8,7 @@
 
 ## X-Category: UI Media, Questing & Leveling, Audio & Video, Miscellaneous
 ## X-Website: https://github.com/donniedice/ModernWarfare2LevelUp
-## X-Curse-Project-ID: 420123
+## X-Curse-Project-ID: 594126
 ## X-Wago-ID: n6VPemGd
 ## X-WoWI-ID: 26258
 
